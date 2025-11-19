@@ -1,7 +1,9 @@
 import { AppShell } from "@/components/layout/app-shell";
 import { MessageList } from "@/components/chat/message-list";
 import { ChatComposer } from "@/components/chat/chat-composer";
-import { getSession, listAgents, listSessions } from "@/lib/api";
+import { SessionHero } from "@/components/chat/session-hero";
+import { GenerativeConsole } from "@/components/canvas/generative-console";
+import { getSession, listAgents, listSessions, listTools } from "@/lib/api";
 import { notFound } from "next/navigation";
 
 interface Props {
@@ -9,30 +11,36 @@ interface Props {
 }
 
 export default async function ChatPage({ params }: Props) {
-  const [session, sessions, agents] = await Promise.all([
+  const [session, sessions, agents, tools] = await Promise.all([
     getSession(params.sessionId),
     listSessions(),
-    listAgents()
+    listAgents(),
+    listTools()
   ]);
 
   if (!session) {
     notFound();
   }
 
+  const activeAgent = agents.find((agent) => agent.id === session.activeAgentId);
+
   return (
     <AppShell sessions={sessions} agents={agents}>
-      <div className="mx-auto flex max-w-5xl flex-col gap-6 px-6 py-8">
-        <div className="space-y-2 border-b border-white/5 pb-6">
-          <p className="text-sm uppercase tracking-wide text-neutral-400">Active agent</p>
-          <h1 className="text-3xl font-semibold text-white">
-            {agents.find((agent) => agent.id === session.activeAgentId)?.name}
-          </h1>
-          <p className="text-neutral-400">
-            {agents.find((agent) => agent.id === session.activeAgentId)?.description}
-          </p>
+      <div className="mx-auto flex min-h-full max-w-7xl flex-col gap-6 px-4 py-8 lg:px-8">
+        <SessionHero agent={activeAgent} session={session} tools={tools} />
+        <div className="flex flex-col gap-6 lg:flex-row">
+          <section className="flex w-full flex-col gap-4 lg:w-[55%]">
+            <div className="flex flex-1 flex-col gap-6 rounded-3xl border border-white/10 bg-black/50 p-5 shadow-card">
+              <div className="space-y-8">
+                <MessageList messages={session.messages} />
+              </div>
+              <ChatComposer sessionId={session.id} />
+            </div>
+          </section>
+          <section className="w-full lg:w-[45%]">
+            <GenerativeConsole session={session} agent={activeAgent} tools={tools} />
+          </section>
         </div>
-        <MessageList messages={session.messages} />
-        <ChatComposer sessionId={session.id} />
       </div>
     </AppShell>
   );

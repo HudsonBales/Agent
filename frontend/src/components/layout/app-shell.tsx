@@ -18,10 +18,10 @@ export function AppShell({ children, sessions, agents }: Props) {
   }
 
   return (
-    <div className="flex h-screen bg-neutral-950 text-white">
+    <div className="flex h-screen overflow-hidden bg-neutral-950 text-white">
       <Sidebar sessions={sessions} agents={agents} onNewChat={handleNewChat} />
-      <main className="flex-1 overflow-y-auto bg-gradient-to-b from-neutral-900/40 to-black">
-        {children}
+      <main className="flex-1 overflow-hidden bg-gradient-to-b from-[#0F172A] via-[#05070f] to-black">
+        <div className="h-full overflow-y-auto">{children}</div>
       </main>
     </div>
   );

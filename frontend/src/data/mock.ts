@@ -30,6 +30,41 @@ export type MessageBlock =
     }
   | { type: "error"; title: string; body: string };
 
+export type MCPMetric = {
+  label: string;
+  value: string;
+  delta?: string;
+};
+
+export type MCPWorkflow = {
+  id: string;
+  title: string;
+  condition: string;
+  channel: string;
+  status: "Live" | "Draft";
+};
+
+export type MCPEvent = {
+  id: string;
+  label: string;
+  time: string;
+};
+
+export type MCPDataSource = {
+  name: string;
+  description: string;
+  status: string;
+};
+
+export type MCPData = {
+  metrics?: MCPMetric[];
+  churnRows?: string[][];
+  anomalies?: { title: string; body: string }[];
+  workflows?: MCPWorkflow[];
+  eventStream?: MCPEvent[];
+  dataSources?: MCPDataSource[];
+};
+
 export type Message = {
   id: string;
   role: "user" | "assistant" | "tool" | "system";
@@ -45,6 +80,7 @@ export type Session = {
   activeAgentId: string;
   messages: Message[];
   updatedAt: string;
+  mcpData?: MCPData;
 };
 
 export const tools: Tool[] = [
@@ -143,7 +179,46 @@ export const sessions: Session[] = [
           }
         ]
       }
-    ]
+    ],
+    mcpData: {
+      metrics: [
+        { label: "MRR", value: "$24.7k", delta: "+3.2%" },
+        { label: "Churn", value: "1.2%", delta: "-0.2%" },
+        { label: "Trials → Paid", value: "68%", delta: "-3.5%" }
+      ],
+      churnRows: [
+        ["Scale", "0.9%", "Stable"],
+        ["Growth", "1.7%", "Needs attention"],
+        ["Starter", "2.4%", "Improving"]
+      ],
+      workflows: [
+        {
+          id: "trial-alert",
+          title: "Trial → Paid watchdog",
+          condition: "Alert at -15% WoW",
+          channel: "Slack #gtm-ops",
+          status: "Live"
+        },
+        {
+          id: "webhook-retry",
+          title: "Stripe webhook resiliency",
+          condition: "Retries 3x + notify Linear",
+          channel: "Automation",
+          status: "Draft"
+        }
+      ],
+      eventStream: [
+        { id: "evt-1", label: "Stripe invoices synced", time: "Just now" },
+        { id: "evt-2", label: "Supabase usage ingested", time: "2m ago" },
+        { id: "evt-3", label: "Churn anomaly scan complete", time: "5m ago" },
+        { id: "evt-4", label: "Slack alert delivered", time: "12m ago" }
+      ],
+      dataSources: [
+        { name: "Stripe", description: "Payments + subscriptions", status: "Streaming schema v4.2" },
+        { name: "Supabase", description: "Analytics + logs", status: "Streaming 102 req/s" },
+        { name: "Linear", description: "Support automations", status: "Connected" }
+      ]
+    }
   },
   {
     id: "sess-support",
@@ -170,7 +245,42 @@ export const sessions: Session[] = [
           }
         ]
       }
-    ]
+    ],
+    mcpData: {
+      metrics: [
+        { label: "High priority threads", value: "2", delta: "+1" },
+        { label: "SLA breach risk", value: "1", delta: "-1" }
+      ],
+      churnRows: [
+        ["Scale", "0.9%", "Watching"],
+        ["Growth", "1.7%", "Critical"],
+        ["Starter", "2.4%", "Stable"]
+      ],
+      anomalies: [
+        {
+          title: "Linear automation paused",
+          body: "OAuth token expired. Reconnect to keep automations running."
+        }
+      ],
+      workflows: [
+        {
+          id: "support-triage",
+          title: "Support escalation",
+          condition: "Auto-assign critical Linear issues",
+          channel: "Linear + Slack",
+          status: "Live"
+        }
+      ],
+      eventStream: [
+        { id: "evt-5", label: "Linear webhook retry scheduled", time: "3m ago" },
+        { id: "evt-6", label: "Gmail digest refreshed", time: "10m ago" }
+      ],
+      dataSources: [
+        { name: "Gmail", description: "Inbox threads", status: "Streaming" },
+        { name: "Linear", description: "Issue automation", status: "OAuth expiring soon" },
+        { name: "Slack", description: "Ops alerts", status: "Connected" }
+      ]
+    }
   }
 ];
 
