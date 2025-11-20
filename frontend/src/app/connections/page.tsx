@@ -8,9 +8,12 @@ export default async function ConnectionsPage() {
     <AppShell sessions={sessions} agents={agents}>
       <div className="mx-auto max-w-5xl space-y-6 px-6 py-8">
         <header>
-          <p className="text-sm uppercase tracking-wide text-neutral-500">Wire everything up</p>
+          <p className="text-sm uppercase tracking-wide text-neutral-500">Instrument your stack</p>
           <h1 className="text-3xl font-semibold">Connections</h1>
-          <p className="text-neutral-400">OAuth-style handshakes simplified for indie hackers.</p>
+          <p className="text-neutral-400">
+            Every tool you connect becomes a live organ in the adaptive console. Stripe + Supabase + Slack + Notion in
+            minutes.
+          </p>
         </header>
         <div className="grid gap-4 md:grid-cols-2">
           {tools.map((tool) => (

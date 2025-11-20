@@ -1,8 +1,9 @@
 "use client";
 
-import { Agent, MCPDataSource, MCPEvent, MCPWorkflow, MessageBlock, Session, Tool } from "@/data/mock";
-import { ReactNode, useMemo, useState } from "react";
+import { Agent, MCPEvent, MCPWorkflow, MessageBlock, Session, Tool } from "@/data/types";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
+import { listAnomalies, listWorkflows } from "@/lib/api";
 
 type Props = {
   session: Session;
@@ -60,10 +61,73 @@ const fallbackEventStream: MCPEvent[] = [
   { id: "evt-4", label: "Slack alert delivered", time: "12m ago" }
 ];
 
+const fallbackAnomalies: ErrorBlock[] = [
+  { type: "error", title: "Payment failures +40%", body: "Stripe webhooks slowed after deploy e1a32a." },
+  { type: "error", title: "Conversion dip in EU", body: "Trial → paid down 14% vs rolling baseline." }
+];
+
 export function GenerativeConsole({ session, agent, tools }: Props) {
   const metrics = useMemo(() => session.mcpData?.metrics ?? findMetrics(session) ?? fallbackMetrics, [session]);
   const churnRows = useMemo(() => session.mcpData?.churnRows ?? findChurn(session) ?? fallbackChurn, [session]);
-  const anomalies = useMemo(() => session.mcpData?.anomalies ?? findAnomalies(session), [session]);
+  
+  // State for real-time data
+  const [realAnomalies, setRealAnomalies] = useState<any[]>([]);
+  const [realWorkflows, setRealWorkflows] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  
+  // Fetch real anomaly and workflow data
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [anomalies, workflows] = await Promise.all([
+          listAnomalies(),
+          listWorkflows()
+        ]);
+        setRealAnomalies(anomalies);
+        setRealWorkflows(workflows);
+      } catch (error) {
+        console.error("Failed to fetch real data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchData();
+    
+    // Poll for updates every 30 seconds
+    const interval = setInterval(fetchData, 30000);
+    return () => clearInterval(interval);
+  }, []);
+  
+  // Use real anomalies if available, otherwise fallback to session data
+  const anomalies = useMemo(() => {
+    if (realAnomalies.length > 0) {
+      return realAnomalies.map(anomaly => ({
+        type: "error",
+        title: anomaly.title,
+        body: anomaly.description || ""
+      }));
+    }
+    
+    const raw = (session.mcpData?.anomalies ?? findAnomalies(session)) ?? [];
+    return raw.length > 0 ? raw : fallbackAnomalies;
+  }, [realAnomalies, session]);
+  
+  // Use real workflows if available, otherwise fallback
+  const workflows = useMemo(() => {
+    if (realWorkflows.length > 0) {
+      return realWorkflows.map(workflow => ({
+        id: workflow.id,
+        title: workflow.definitionId || workflow.id,
+        condition: workflow.status || "Unknown",
+        channel: "System",
+        status: workflow.status || "Draft"
+      }));
+    }
+    
+    return session.mcpData?.workflows ?? fallbackWorkflows;
+  }, [realWorkflows, session]);
+  
   const [activeMetric, setActiveMetric] = useState(metrics[0]?.label ?? "MRR");
 
   const trend = useMemo(() => {
@@ -75,45 +139,38 @@ export function GenerativeConsole({ session, agent, tools }: Props) {
   }, [activeMetric]);
 
   const connectedTools = tools.filter((tool) => (agent?.tools ?? []).includes(tool.id));
-  const dataSources = session.mcpData?.dataSources ?? connectedTools.map((tool) => ({
-    name: tool.name,
-    description: tool.description,
-    status: tool.connected ? "Streaming" : "Connect"
-  }));
 
-  const workflows = session.mcpData?.workflows ?? fallbackWorkflows;
   const eventStream = session.mcpData?.eventStream ?? fallbackEventStream;
+  const activeAnomaly = anomalies[0];
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="space-y-4">
       <motion.section
         layout
-        className="rounded-3xl border border-white/5 bg-gradient-to-b from-[#111530] via-[#060914] to-black p-6 shadow-card"
+        className="rounded-3xl border border-white/10 bg-[#060c1a] p-5 shadow-[0_25px_90px_rgba(0,0,0,0.5)]"
       >
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center justify-between">
           <div>
-            <p className="text-xs uppercase tracking-[0.3em] text-neutral-400">Auto Instrumentation</p>
-            <h2 className="mt-2 text-xl font-semibold text-white">Business telemetry streaming</h2>
+            <p className="text-xs uppercase tracking-[0.4em] text-neutral-400">Instrumentation</p>
+            <h2 className="text-lg font-semibold text-white">Live metrics</h2>
             <p className="text-sm text-neutral-400">
-              OAuth complete · MCP schemas hydrated · Listening to {connectedTools.length || 0} systems
+              {connectedTools.length || 0} sources · {session.messages.length} prompts processed
             </p>
           </div>
-          <div className="rounded-2xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-2 text-emerald-100">
+          <span className="rounded-full border border-white/10 px-3 py-1 text-xs uppercase tracking-[0.3em] text-white/70">
             Live
-          </div>
+          </span>
         </div>
-        <div className="mt-6 grid gap-3 sm:grid-cols-3">
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
           {metrics.map((metric) => (
             <button
               key={metric.label}
               onClick={() => setActiveMetric(metric.label)}
               className={`rounded-2xl border px-4 py-3 text-left transition ${
-                activeMetric === metric.label
-                  ? "border-brand bg-brand/10 text-white"
-                  : "border-white/10 bg-white/5 text-white/80 hover:border-white/30"
+                activeMetric === metric.label ? "border-white/40 bg-white/10 text-white" : "border-white/10 bg-black/40 text-white/70"
               }`}
             >
-              <p className="text-xs uppercase tracking-wide text-neutral-400">{metric.label}</p>
+              <p className="text-xs uppercase tracking-[0.3em] text-neutral-500">{metric.label}</p>
               <p className="mt-2 text-2xl font-semibold">{metric.value}</p>
               {metric.delta && <p className="text-xs text-emerald-400">{metric.delta} vs last week</p>}
             </button>
@@ -121,174 +178,82 @@ export function GenerativeConsole({ session, agent, tools }: Props) {
         </div>
       </motion.section>
 
-      <motion.section layout className="rounded-3xl border border-white/5 bg-black/50 p-6">
+      <section className="rounded-3xl border border-white/10 bg-[#070b16] p-5">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-xs uppercase tracking-[0.3em] text-neutral-500">Derived dashboard</p>
-            <h3 className="mt-2 text-lg font-semibold text-white">{activeMetric} focus</h3>
+            <p className="text-xs uppercase tracking-[0.3em] text-neutral-400">Insight</p>
+            <h3 className="text-lg font-semibold text-white">{activeMetric} focus</h3>
           </div>
-          <span className="text-xs text-neutral-400">Regenerates after every prompt</span>
+          <span className="text-xs text-neutral-400">Updated live</span>
         </div>
-        <div className="mt-4 grid gap-4 lg:grid-cols-[2fr,1fr]">
-          <div className="rounded-2xl border border-white/5 bg-gradient-to-br from-white/5 to-transparent p-5">
-            <div className="flex items-center justify-between text-sm text-neutral-400">
-              <span>Weekly signal</span>
-              <span>Auto forecast</span>
-            </div>
-            <div className="mt-6 flex h-44 items-end gap-3">
-              {trend.map((point) => (
-                <div key={point.label} className="flex flex-col items-center gap-2 text-xs text-neutral-500">
-                  <div
-                    className="w-8 rounded-2xl bg-gradient-to-t from-brand/20 to-brand/80 shadow-card"
-                    style={{ height: `${point.value}%` }}
-                  />
-                  <span>{point.label}</span>
-                </div>
-              ))}
-            </div>
+        <div className="mt-4 grid gap-3">
+          <div className="rounded-2xl border border-white/10 bg-[#0b1325] p-4 text-sm text-neutral-200">
+            <p>Fastest movement inside Growth tier. Trial-to-paid dropped 14% WoW.</p>
           </div>
-          <div className="space-y-3 rounded-2xl border border-white/5 bg-white/5 p-5 text-sm">
-            <div>
-              <p className="text-xs uppercase tracking-wide text-neutral-400">Insight</p>
-              <p className="mt-2 text-white">
-                Fastest movement inside <span className="text-brand">Growth</span> tier. Trial-to-paid dropped 14% WoW.
-              </p>
-            </div>
-            <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-3 text-red-100">
-              Proposed automation · Retry churned invoices + Slack ops-review.
-            </div>
-            <div className="rounded-xl border border-white/10 bg-black/40 p-3">
-              <p className="text-xs text-neutral-400">Next Steps</p>
-              <ul className="mt-2 list-disc space-y-1 pl-5 text-neutral-200">
-                <li>Slice conversion by plan</li>
-                <li>Deploy conversion monitor rule</li>
-                <li>Open Supabase session recordings</li>
-              </ul>
-            </div>
+          <div className="flex flex-wrap gap-2 text-xs text-neutral-400">
+            <span className="rounded-full border border-white/10 px-3 py-1">Retry invoices</span>
+            <span className="rounded-full border border-white/10 px-3 py-1">Notify billing</span>
+            <span className="rounded-full border border-white/10 px-3 py-1">Reconcile logs</span>
           </div>
         </div>
-      </motion.section>
+      </section>
 
-      <CollapsibleSection title="Data Sources">
-        <div className="space-y-3">
-          {dataSources.map((source) => (
-            <div
-              key={source.name}
-              className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/0 p-3"
-            >
-              <div>
-                <p className="text-sm font-medium text-white">{source.name}</p>
-                <p className="text-xs text-neutral-500">{source.description}</p>
-              </div>
-              <span className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-xs text-emerald-200">
-                {source.status}
-              </span>
-            </div>
-          ))}
-          {dataSources.length === 0 && (
-            <p className="text-sm text-neutral-500">Connect Stripe, Supabase, and more to see dashboards bloom.</p>
-          )}
+      <section className="rounded-3xl border border-white/10 bg-[#070c17] p-5">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs uppercase tracking-[0.3em] text-neutral-400">Generative remediation</p>
+            <h3 className="text-lg font-semibold text-white">Workflows</h3>
+          </div>
+          <span className="text-xs text-emerald-300">Auto mode</span>
         </div>
-      </CollapsibleSection>
-
-      <CollapsibleSection title="Churn intelligence">
-        <div className="rounded-2xl border border-white/5">
-          <table className="min-w-full divide-y divide-white/5 text-sm">
-            <thead className="bg-white/5 text-left text-xs uppercase tracking-wide text-neutral-400">
-              <tr>
-                <th className="px-4 py-3">Plan</th>
-                <th className="px-4 py-3">Churn</th>
-                <th className="px-4 py-3">Signal</th>
-              </tr>
-            </thead>
-            <tbody>
-              {churnRows.map((row, index) => (
-                <tr key={`${row[0]}-${index}`} className="border-b border-white/5 text-white/80">
-                  {row.map((cell, cellIndex) => (
-                    <td key={`${cell}-${cellIndex}`} className="px-4 py-3">
-                      {cell}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </CollapsibleSection>
-
-      <CollapsibleSection title="Workflows & Alerts">
-        <div className="space-y-3">
+        <div className="mt-4 space-y-3">
           {workflows.map((workflow) => (
-            <div key={workflow.id} className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-neutral-200">
-              <div className="flex flex-wrap items-center justify-between gap-2 text-white">
-                <p className="text-base font-semibold">{workflow.title}</p>
+            <div key={workflow.id} className="rounded-2xl border border-white/10 bg-black/30 p-3 text-sm text-neutral-200">
+              <div className="flex items-center justify-between text-white">
+                <p className="font-semibold">{workflow.title}</p>
                 <span
                   className={`rounded-full px-3 py-1 text-xs ${
                     workflow.status === "Live"
                       ? "border border-emerald-500/40 bg-emerald-500/10 text-emerald-200"
-                      : "border border-yellow-500/40 bg-yellow-500/10 text-yellow-100"
+                      : "border border-neutral-500/40 text-neutral-300"
                   }`}
                 >
                   {workflow.status}
                 </span>
               </div>
-              <p className="mt-2 text-xs text-neutral-400">{workflow.condition}</p>
-              <p className="text-xs text-neutral-500">Notifies via {workflow.channel}</p>
+              <p className="text-xs text-neutral-400">{workflow.condition}</p>
             </div>
           ))}
-        </div>
-        {anomalies.length > 0 && (
-          <div className="mt-4 rounded-2xl border border-red-500/40 bg-red-500/10 p-4 text-sm text-red-100">
-            <p className="font-semibold">Live issue detected</p>
-            <ul className="mt-2 list-disc space-y-1 pl-4 text-red-100">
+          {anomalies.length > 0 && (
+            <div className="rounded-2xl border border-red-500/40 bg-red-500/10 p-3 text-xs text-red-100">
               {anomalies.map((anomaly, index) => (
-                <li key={`${anomaly.title}-${index}`}>
-                  {anomaly.title} — {anomaly.body}
-                </li>
+                <p key={`${anomaly.title}-${index}`} className="text-sm">
+                  {anomaly.title}: {anomaly.body}
+                </p>
               ))}
-            </ul>
-          </div>
-        )}
-      </CollapsibleSection>
+            </div>
+          )}
+        </div>
+      </section>
 
-      <CollapsibleSection title="Event stream" defaultOpen={false}>
-        <div className="space-y-2 text-sm text-neutral-400">
+      <section className="rounded-3xl border border-white/10 bg-[#070914] p-5">
+        <div className="flex items-center justify-between">
+          <p className="text-xs uppercase tracking-[0.3em] text-neutral-400">Execution timeline</p>
+          <span className="text-xs text-neutral-400">Realtime stream</span>
+        </div>
+        <div className="mt-3 space-y-2 text-sm text-neutral-400">
           {eventStream.map((event) => (
-            <div key={event.id} className="flex items-center justify-between rounded-2xl border border-white/5 bg-black/40 px-4 py-3">
+            <div
+              key={event.id}
+              className="flex items-center justify-between rounded-2xl border border-white/5 bg-black/30 px-4 py-2"
+            >
               <span>{event.label}</span>
               <span className="text-xs text-neutral-500">{event.time}</span>
             </div>
           ))}
         </div>
-      </CollapsibleSection>
+      </section>
     </div>
-  );
-}
-
-function CollapsibleSection({
-  title,
-  children,
-  defaultOpen = true
-}: {
-  title: string;
-  children: ReactNode;
-  defaultOpen?: boolean;
-}) {
-  const [open, setOpen] = useState(defaultOpen);
-  return (
-    <section className="rounded-3xl border border-white/5 bg-white/5 p-5">
-      <button
-        onClick={() => setOpen((prev) => !prev)}
-        className="flex w-full items-center justify-between text-left text-sm text-white"
-      >
-        <div>
-          <p className="text-xs uppercase tracking-[0.3em] text-neutral-500">Generative panel</p>
-          <h3 className="text-lg font-semibold text-white">{title}</h3>
-        </div>
-        <span className="text-xs text-neutral-400">{open ? "Hide" : "Reveal"}</span>
-      </button>
-      {open && <div className="mt-4 space-y-3">{children}</div>}
-    </section>
   );
 }
 

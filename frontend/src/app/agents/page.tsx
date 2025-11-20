@@ -8,9 +8,11 @@ export default async function AgentsPage() {
     <AppShell sessions={sessions} agents={agents}>
       <div className="mx-auto max-w-5xl space-y-6 px-6 py-8">
         <header>
-          <p className="text-sm uppercase tracking-wide text-neutral-500">Build your copilots</p>
+          <p className="text-sm uppercase tracking-wide text-neutral-500">Brain settings</p>
           <h1 className="text-3xl font-semibold">Agents</h1>
-          <p className="text-neutral-400">Configure prompts, tools, and automations.</p>
+          <p className="text-neutral-400">
+            Planner, Ops Intelligence, UI Designer, Remediation — tune their prompts, tool access, and triggers.
+          </p>
         </header>
         <div className="grid gap-4 md:grid-cols-2">
           {agents.map((agent) => (

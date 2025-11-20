@@ -1,0 +1,1 @@
+{"version":3,"file":"ui-designer-agent.d.ts","sourceRoot":"","sources":["../../src/agents/ui-designer-agent.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,mBAAmB,EAAE,MAAM,qCAAqC,CAAC;AAC1E,OAAO,EAAE,QAAQ,EAAE,MAAM,UAAU,CAAC;AAEpC,qBAAa,eAAe;IACd,OAAO,CAAC,SAAS;gBAAT,SAAS,EAAE,mBAAmB;IAE5C,MAAM,CAAC,WAAW,EAAE,MAAM,EAAE,OAAO,EAAE,MAAM,GAAG,OAAO,CAAC,QAAQ,CAAC;CAGtE"}

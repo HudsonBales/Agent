@@ -1,35 +1,72 @@
-# Indie Hacker Copilot
+# Indie Copilot
 
-This repo now includes both the end-to-end product spec and a working full-stack implementation scaffold that mirrors the ChatGPT-style UX described in the spec.
+A full-stack AI-powered application with a Next.js frontend and Express backend.
 
-## Apps & directories
+## Prerequisites
 
-| Path | Description |
-| --- | --- |
-| `docs/product_spec.md` | High-level product & architecture specification. |
-| `frontend/` | Next.js 14 App Router project with Tailwind design system, mock backend, and key routes (`/chat`, `/agents`, `/connections`, `/settings`). |
+- Node.js (v18 or higher)
+- npm or yarn
 
-## Frontend quick start
+## Setup
+
+1. Install dependencies for both frontend and backend:
 
 ```bash
+# Install frontend dependencies
 cd frontend
 npm install
+
+# Install backend dependencies
+cd ../backend
+npm install
+```
+
+## Running the Application
+
+You need to run both the frontend and backend servers:
+
+### Start the Backend Server
+
+```bash
+cd backend
 npm run dev
 ```
 
-The app boots with a sidebar, streaming-style chat UI, connections dashboard, and editable agent gallery. Mock data lives in `src/data/mock.ts`; Next.js API routes simulate the orchestrator/connector responses.
+The backend will start on http://localhost:4000
 
-## Testing & linting
+### Start the Frontend Server
 
-Inside `frontend/`:
+In a new terminal:
 
 ```bash
-npm run lint
-npm run typecheck
+cd frontend
+npm run dev
 ```
 
-## Roadmap
+The frontend will start on http://localhost:3000
 
-* Swap the mock data layer in `src/lib/api.ts` with real Gateway/Orchestrator calls.
-* Implement real streaming (SSE) handlers inside `app/api/chat/[sessionId]/stream`.
-* Back the job scheduler & automations UI with a queue (e.g., Temporal, BullMQ).
+## Environment Variables
+
+The frontend requires the following environment variables, which are set in `frontend/.env`:
+
+- `NEXT_PUBLIC_BACKEND_URL`: The URL of the backend server (default: http://localhost:4000)
+- `NEXT_PUBLIC_WORKSPACE_ID`: The workspace ID (default: ws-demo)
+
+## API Endpoints
+
+The backend provides the following API endpoints:
+
+- `GET /api/v1/workspaces/:workspaceId/sessions` - List sessions
+- `POST /api/v1/workspaces/:workspaceId/sessions` - Create a new session
+- `GET /api/v1/sessions/:sessionId` - Get a specific session
+- `GET /api/v1/workspaces/:workspaceId/agents` - List agents
+- `GET /api/v1/workspaces/:workspaceId/tools` - List tools
+- And more...
+
+## Troubleshooting
+
+If you encounter a "fetch failed" error:
+
+1. Make sure the backend server is running on http://localhost:4000
+2. Check that the frontend environment variables are correctly set in `frontend/.env`
+3. Verify that there are no network or firewall issues blocking the connection

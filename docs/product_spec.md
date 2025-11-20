@@ -1,42 +1,50 @@
-# Indie Hacker Copilot – Product Specification
+# OpsPilot – Adaptive Operations OS Specification
+
+## 0. Positioning Summary
+
+OpsPilot is the first adaptive operations system — the “AI COO” that understands, visualizes, and runs a SaaS business automatically. It is not a dashboard builder, workflow tool, analytics suite, or automation platform. Instead, it is an agent-native OS where:
+
+- The system auto-instruments Stripe + Supabase (or any MCP-capable source).
+- Dashboards and admin panels generate themselves on demand.
+- Signals stream in, anomalies are caught proactively, and incidents surface in context.
+- Remediations + workflows are proposed, visualized, and executed automatically.
+- The interface is a chat + adaptive canvas; the UI grows around the business, not the other way around.
+
+Experience promise: “Chat on the left, living system on the right.”
 
 ## 1. Core Mental Model
-- **User**: indie hacker operating one or more SaaS products.
-- **Workspace / Product**: container for assets per SaaS; scopes sessions, agents, tools.
-- **Session (Chat)**: threaded conversation akin to ChatGPT chats; stores messages + blocks.
-- **Agent**: configurable GPT-like persona (name, description, system prompt, tool access, triggers).
-- **Tool (MCP server)**: integrations (Stripe, Gmail, Notion, GitHub, etc.) surfaced through MCP protocol.
-- **Run**: execution of an agent (foreground chat or scheduled background job).
-- **Blocks**: structured UI payloads rendered within chats (tables, cards, metrics, error notices).
+- **Founder / Operator**: indie hacker or lean SaaS team who wants a single intelligent console.
+- **Workspace**: scoped SaaS product instance; contains sessions, tools, signals, and adaptive layouts.
+- **Session (Command Thread)**: chat between user and OpsPilot capturing prompts, plans, insights, workflows.
+- **Adaptive Canvas Blocks**: generated UI schemas (metrics, incidents, workflows, logs) that materialize per session.
+- **Agent Ensemble**: Planner, Ops Intelligence, UI Designer, Remediation — orchestrated via Apps SDK-style routes.
+- **Workflow Run**: long-lived execution of remediation / automation tasks triggered by incidents or chat.
+- **Signals Layer**: continuously ingested metrics, anomalies, and events that feed insights and incidents.
+- **MCP Tooling**: Stripe, Supabase, Slack, Notion, etc. exposed as agent-callable tools with workspace context.
 
-Everything rendered to the user is composed from sessions, blocks, agents, and tool executions.
-
-## 2. Frontend Architecture (Next.js App Router)
+## 2. Frontend Architecture – Adaptive Command Console
 ### 2.1 Tech Stack
-- **Framework**: Next.js (App Router) with React + TypeScript.
-- **Styling**: Tailwind CSS driven by a token set (spacing, typography, radii, shadows, colors).
-- **Component primitives**: Radix UI / shadcn-like layer for menus, dialogs, popovers, etc.
-- **State / Data**: TanStack Query for server data and optimistic updates; lightweight Zustand store for ephemeral UI.
-- **Transport**: HTTPS for standard requests, SSE/WebSocket for streaming chat tokens & tool events.
+- **Framework**: Next.js (App Router) with React, TypeScript, and server components for shell hydration.
+- **Styling**: Tailwind tokens + motion primitives (Framer Motion) to create cinematic panel transitions.
+- **State**: Server data via async components + fetch, SSE streaming via Next route proxy, lightweight client state for composer/UI toggles.
+- **Transport**: HTTPS for static requests, SSE for chat/tool events, optional WebSocket for future live telemetry replay.
 
 ### 2.2 Layout
-- Root layout with **left sidebar** (new chat button, recent sessions, agents, tools/connections, settings) and **main content** area.
-- Routes: `/chat/[sessionId]`, `/agents`, `/connections`, `/settings`.
-- Sidebar collapses responsively; session rows provide action menus (rename, duplicate, delete) with Framer Motion transitions.
+- Left rail: sessions + agents + “Launch Command Console” CTA.
+- Main area: **AI Command Console** (chat) + **Adaptive Canvas** (self-building panels).
+- Additional routes: `/connections` (“Instrument your stack”), `/agents` (“Brain settings”), `/settings`.
+- Canvas extends to contain incidents, workflows, live execution, insights — all generated, not user-configured.
 
 ### 2.3 Design System
-- Neutral gray palette with accent CTAs, dark mode parity via CSS variables.
-- Typography scale: `xs, sm, base, lg, xl, 2xl` using a single readable font.
-- Spacing scale: `4/8/12/16px` multiples.
-- Standardized components: buttons, inputs, selects, tabs, chips, toasts, avatars, skeletons, cards.
-- Define tokens first, then build components to avoid per-page CSS hacks.
+- Palette: deep space background with neon highlights; subtle glassmorphism to imply holographic dashboards.
+- Components emphasize “auto-generated” vibe: cards that fade in, diagrams that draw themselves, logs streaming with caret.
+- Controls kept minimal; text + motion communicate state (“Auto-instrumenting…”, “Canvas listening…”).
 
-### 2.4 Chat UI
-- Virtualized message list when long.
-- Each message displays avatar, role, and Markdown-rendered content with syntax highlighting + copy button for code blocks.
-- Tool outputs surface as typed blocks (tables, metric summaries, error blocks).
-- Streaming via SSE/WebSocket yields `delta` token events and `tool_call_*` events; UI shows typing indicator, gradual reveal, "Thinking…" states for tools.
-- Composer: multiline textarea, Enter to send, Shift+Enter newline, plus controls for agent picker, tool overrides, context attachments, and optional slash commands popover.
+### 2.4 Chat UX
+- Chat is primary command surface; message bubbles capture user prompts + agent responses + structured blocks.
+- SSE stream emits tokens + plan events + tool events + UI schema updates; UI renders each event in situ (plan cards, insight pills, workflow nodes).
+- Composer encourages natural language: placeholder copy referencing “Connect Stripe, show MRR, fix payment failures”.
+- Slash commands optional for quick actions (`/overview`, `/incident`, `/workflow`), but emphasis remains on natural chat.
 
 ## 3. Backend High-Level Design
 ### 3.1 Gateway API

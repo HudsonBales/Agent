@@ -1,0 +1,1 @@
+{"version":3,"file":"ui-designer-agent.js","sourceRoot":"","sources":["../../src/agents/ui-designer-agent.ts"],"names":[],"mappings":";;;AAGA,MAAa,eAAe;IAC1B,YAAoB,SAA8B;QAA9B,cAAS,GAAT,SAAS,CAAqB;IAAG,CAAC;IAEtD,KAAK,CAAC,MAAM,CAAC,WAAmB,EAAE,OAAe;QAC/C,OAAO,IAAI,CAAC,SAAS,CAAC,UAAU,CAAC,WAAW,EAAE,OAAO,CAAC,CAAC;IACzD,CAAC;CACF;AAND,0CAMC"}

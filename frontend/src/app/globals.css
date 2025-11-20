@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -6,12 +8,9 @@
   color-scheme: light;
 }
 
-[data-theme="dark"] {
-  color-scheme: dark;
-}
-
 body {
-  @apply bg-neutral-950 text-neutral-100 font-sans min-h-screen;
+  @apply bg-white text-[#1f1f1f] min-h-screen;
+  font-family: "Manrope", "Inter", system-ui, -apple-system, sans-serif;
 }
 
 ::-webkit-scrollbar {
