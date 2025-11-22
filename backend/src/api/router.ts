@@ -8,6 +8,7 @@ import { WorkflowEngine } from "../workflows/engine";
 import { UIExperienceService } from "../experience/ui-experience-service";
 import { Agent } from "../types";
 import { EventBus } from "../core/event-bus";
+import { createIntegrationRouter } from "./integration-router";
 
 interface ApiDeps {
   store: DataStore;
@@ -23,6 +24,15 @@ export function createApp(deps: ApiDeps) {
   const app = express();
   app.use(cors());
   app.use(express.json());
+  
+  // Create integration router
+  const integrationRouter = createIntegrationRouter({
+    store: deps.store,
+    gateway: deps.gateway
+  });
+  
+  // Mount integration router
+  app.use("/api/v1/integrations", integrationRouter);
 
   app.get("/health", (_req, res) => {
     res.json({ status: "ok", now: new Date().toISOString() });
@@ -150,8 +160,9 @@ export function createApp(deps: ApiDeps) {
     res.status(201).json({ data: agent });
   });
 
-  app.get("/api/v1/workspaces/:workspaceId/tools", (_req, res) => {
-    res.json({ data: deps.gateway.listTools() });
+  app.get("/api/v1/workspaces/:workspaceId/tools", async (_req, res) => {
+    const tools = await deps.gateway.listTools();
+    res.json({ data: tools });
   });
 
   app.get("/api/v1/workspaces/:workspaceId/signals/metrics", (req, res) => {

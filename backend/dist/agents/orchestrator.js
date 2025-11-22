@@ -25,21 +25,29 @@ class AgentOrchestrator {
             content: request.message,
             createdAt: new Date().toISOString()
         });
-        const plan = this.planner.createPlan(session, agent, request.message);
+        const plan = await this.planner.createPlan(session, agent, request.message);
         yield { type: "plan", data: plan };
-        const insights = this.ops.generateInsights(request.workspaceId);
+        const insights = await this.ops.generateInsights(request.workspaceId);
         for (const insight of insights) {
             yield { type: "insight", data: insight };
         }
         const toolCalls = agent.toolsWhitelist.slice(0, 2);
         for (const toolId of toolCalls) {
             yield { type: "tool_call", data: { toolId, status: "started" } };
-            const result = await this.gateway.execute({ workspaceId: request.workspaceId, actorId: request.actorId }, toolId, { range: "7d" });
-            yield { type: "tool_call", data: { toolId, status: "finished", result } };
+            try {
+                const result = await this.gateway.execute({ workspaceId: request.workspaceId, actorId: request.actorId }, toolId, { range: "7d" });
+                yield { type: "tool_call", data: { toolId, status: "finished", result } };
+            }
+            catch (error) {
+                yield {
+                    type: "tool_call",
+                    data: { toolId, status: "error", error: error.message }
+                };
+            }
         }
         const schema = await this.uiDesigner.design(request.workspaceId, "main_dashboard");
         yield { type: "ui_schema", data: schema };
-        const remediationSuggestions = this.remediation.suggest(request.workspaceId, this.store.listAnomalies(request.workspaceId));
+        const remediationSuggestions = await this.remediation.suggest(request.workspaceId, this.store.listAnomalies(request.workspaceId));
         const summary = [
             `**Plan**: ${plan.goal}`,
             `**Insights**: ${insights.slice(0, 2).map((insight) => insight.text).join(" • ") || "No new insights"}`,

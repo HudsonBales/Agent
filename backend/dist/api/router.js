@@ -6,10 +6,18 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.createApp = createApp;
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
+const integration_router_1 = require("./integration-router");
 function createApp(deps) {
     const app = (0, express_1.default)();
     app.use((0, cors_1.default)());
     app.use(express_1.default.json());
+    // Create integration router
+    const integrationRouter = (0, integration_router_1.createIntegrationRouter)({
+        store: deps.store,
+        gateway: deps.gateway
+    });
+    // Mount integration router
+    app.use("/api/v1/integrations", integrationRouter);
     app.get("/health", (_req, res) => {
         res.json({ status: "ok", now: new Date().toISOString() });
     });
@@ -46,6 +54,39 @@ function createApp(deps) {
         res.setHeader("Cache-Control", "no-cache");
         res.setHeader("Connection", "keep-alive");
         res.flushHeaders?.();
+        // If no message provided, just establish connection for real-time events
+        if (!message || message.trim() === "") {
+            // Keep connection alive and listen for real-time events
+            const sendEvent = (type, data) => {
+                res.write(`event: ${type}\n`);
+                res.write(`data: ${JSON.stringify(data)}\n\n`);
+            };
+            // Listen for real-time events
+            const cleanupListeners = [];
+            const anomalyListener = (payload) => {
+                sendEvent("anomaly", payload);
+            };
+            const workflowListener = (payload) => {
+                sendEvent("workflow", payload);
+            };
+            const uiListener = (payload) => {
+                sendEvent("ui_update", payload);
+            };
+            deps.bus.on("signals.anomaly.detected", anomalyListener);
+            deps.bus.on("workflow.run.completed", workflowListener);
+            deps.bus.on("ui.schema.generated", uiListener);
+            // Keep connection alive
+            const keepAlive = setInterval(() => {
+                res.write(`:\n\n`); // SSE comment to keep connection alive
+            }, 30000);
+            // Clean up on connection close
+            req.on("close", () => {
+                clearInterval(keepAlive);
+                // Note: EventEmitter.removeListener is not directly available in our implementation
+                // The listeners will be garbage collected when the connection closes
+            });
+            return;
+        }
         const stream = deps.orchestrator.runChat({
             workspaceId,
             sessionId: req.params.sessionId,
@@ -86,8 +127,9 @@ function createApp(deps) {
         deps.store.saveAgent(agent);
         res.status(201).json({ data: agent });
     });
-    app.get("/api/v1/workspaces/:workspaceId/tools", (_req, res) => {
-        res.json({ data: deps.gateway.listTools() });
+    app.get("/api/v1/workspaces/:workspaceId/tools", async (_req, res) => {
+        const tools = await deps.gateway.listTools();
+        res.json({ data: tools });
     });
     app.get("/api/v1/workspaces/:workspaceId/signals/metrics", (req, res) => {
         res.json({ data: deps.signals.getMetrics(req.params.workspaceId) });

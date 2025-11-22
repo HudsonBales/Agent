@@ -16,35 +16,37 @@ export function MessageBubble({ message }: { message: Message }) {
   const formattedTime = new Date(message.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
   return (
-    <div className={clsx("flex gap-4", isAssistant ? "flex-row" : "flex-row-reverse")}>
+    <div className={clsx("flex gap-4", isAssistant ? "flex-row" : "flex-row-reverse")}> 
       <div
         className={clsx(
           "h-10 w-10 rounded-2xl text-center text-sm font-semibold leading-[2.5rem]",
-          isAssistant ? "bg-[#e8f0fe] text-[#1a73e8]" : "bg-[#1a73e8] text-white"
+          isAssistant ? "bg-white/10 text-white" : "bg-gradient-to-br from-[#2563eb] to-[#7c3aed] text-white"
         )}
       >
         {role?.[0] ?? "?"}
       </div>
       <div
         className={clsx(
-          "flex-1 space-y-3 rounded-3xl border px-5 py-4 text-sm shadow-sm",
-          isAssistant ? "border-neutral-200 bg-[#f8f9fb] text-neutral-900" : "border-transparent bg-[#1a73e8] text-white"
+          "flex-1 space-y-3 rounded-3xl border px-5 py-4 text-sm shadow-xl",
+          isAssistant
+            ? "border-white/5 bg-white/5 text-white"
+            : "border-[#2563eb]/40 bg-gradient-to-br from-[#1d3b74] to-[#0f1c42] text-white"
         )}
       >
         <div
           className={clsx(
             "flex items-center justify-between text-[10px] uppercase tracking-[0.4em]",
-            isAssistant ? "text-neutral-400" : "text-white/70"
+            isAssistant ? "text-white/60" : "text-white/70"
           )}
         >
           <span>{role}</span>
           <span>{formattedTime}</span>
         </div>
-        <div className={clsx("max-w-none leading-relaxed", isAssistant ? "text-neutral-900" : "text-white/90")}>
+        <div className="prose prose-invert max-w-none text-base leading-relaxed">
           <ReactMarkdown>{message.content}</ReactMarkdown>
         </div>
         {message.blocks && message.blocks.length > 0 && (
-          <div className={clsx("space-y-3 text-sm", isAssistant ? "text-neutral-600" : "text-white/90")}>
+          <div className="space-y-3 text-sm text-white/90">
             <BlocksRenderer blocks={message.blocks} />
           </div>
         )}

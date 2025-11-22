@@ -4,6 +4,7 @@ export declare class StripeConnector implements IntegrationConnector {
     id: string;
     name: string;
     namespace: string;
+    requiresConnection: boolean;
     tools: ({
         id: string;
         name: string;
@@ -23,17 +24,27 @@ export declare class StripeConnector implements IntegrationConnector {
     })[];
     execute(toolId: string, args: Record<string, unknown>, context: IntegrationContext): Promise<{
         id: string;
-        customer: string;
+        customer: string | undefined;
         amount: number;
         currency: string;
+        createdAt: string;
         failureReason: string;
+        failureMessage: string | undefined;
     }[] | {
         workspaceId: string;
         range: string;
         arr: number;
         mrr: number;
+        totalPayments: number;
+        successfulPayments: number;
+        failedPayments: number;
         currency: string;
-        growthRate: number;
+        grossVolume: number;
+        netVolume: number;
     }>;
+    private getApiKey;
+    private getRangeDays;
+    private getSinceSeconds;
+    private fetchStripe;
 }
 //# sourceMappingURL=stripe-connector.d.ts.map

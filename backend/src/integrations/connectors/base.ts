@@ -12,5 +12,6 @@ export interface IntegrationConnector {
   name: string;
   namespace: string;
   tools: ToolSchema[];
+  requiresConnection?: boolean;
   execute(toolId: string, args: Record<string, unknown>, context: IntegrationContext): Promise<unknown>;
 }

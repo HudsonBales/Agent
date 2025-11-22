@@ -1,0 +1,54 @@
+
+> backend@1.0.0 dev
+> tsx watch src/index.ts
+
+OPENAI_API_KEY not set. PlannerAgent will use fallback heuristics.
+OPENAI_API_KEY not set. OpsIntelligenceAgent will use heuristic insights.
+OPENAI_API_KEY not set. RemediationAgent will emit heuristic suggestions.
+Ops backend listening on http://localhost:4000
+MCP process exited with code 1
+MCP process exited with code 1
+[Signals] anomaly detected {
+  id: 'anom-RGlRwxBD',
+  workspaceId: 'ws-demo',
+  metricId: 'metric-conversion',
+  title: 'Trial to Paid Conversion moved 18% vs baseline',
+  description: 'Trial to Paid Conversion changed from 1.45 to 1.72.',
+  severity: 'medium',
+  detectedAt: '2025-11-22T01:37:19.937Z',
+  baseline: 1.45,
+  observed: 1.72
+}
+[Signals] anomaly detected {
+  id: 'anom-Nh1XKYWG',
+  workspaceId: 'ws-demo',
+  metricId: 'metric-conversion',
+  title: 'Trial to Paid Conversion moved 21% vs baseline',
+  description: 'Trial to Paid Conversion changed from 1.49 to 1.81.',
+  severity: 'medium',
+  detectedAt: '2025-11-22T01:37:29.937Z',
+  baseline: 1.49,
+  observed: 1.81
+}
+[Signals] anomaly detected {
+  id: 'anom-KjW1ur8w',
+  workspaceId: 'ws-demo',
+  metricId: 'metric-conversion',
+  title: 'Trial to Paid Conversion moved 17% vs baseline',
+  description: 'Trial to Paid Conversion changed from 1.60 to 1.87.',
+  severity: 'medium',
+  detectedAt: '2025-11-22T01:37:39.938Z',
+  baseline: 1.6,
+  observed: 1.87
+}
+[Signals] anomaly detected {
+  id: 'anom-x1Oc8Myc',
+  workspaceId: 'ws-demo',
+  metricId: 'metric-conversion',
+  title: 'Trial to Paid Conversion moved 17% vs baseline',
+  description: 'Trial to Paid Conversion changed from 1.80 to 2.11.',
+  severity: 'medium',
+  detectedAt: '2025-11-22T01:43:09.965Z',
+  baseline: 1.8,
+  observed: 2.11
+}

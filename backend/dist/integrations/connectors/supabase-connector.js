@@ -4,42 +4,110 @@ exports.SupabaseConnector = void 0;
 class SupabaseConnector {
     constructor() {
         this.id = "supabase";
-        this.name = "Supabase Analytics";
+        this.name = "Supabase";
         this.namespace = "supabase";
+        this.requiresConnection = true;
         this.tools = [
             {
                 id: "supabase.analytics",
-                name: "Query product metrics",
-                description: "Returns funnel and activation metrics.",
+                name: "Query activation metrics",
+                description: "Uses the Supabase Admin API to return signup metrics.",
                 args: { metric: "conversion_rate|activation_rate", range: "7d|30d" }
             },
             {
                 id: "supabase.sync_subscription",
                 name: "Retry subscription sync",
-                description: "Retries syncing Stripe subscription data.",
+                description: "Invokes a Supabase Function to re-sync subscription data.",
                 args: { retries: "Number of retries" }
             }
         ];
     }
     async execute(toolId, args, context) {
+        const config = this.getConfig(context);
         if (toolId === "supabase.analytics") {
+            const range = args.range ?? "7d";
+            const since = new Date(Date.now() - this.getRangeDays(range) * 86400000).toISOString();
+            const response = await this.fetchSupabase(config.url, config.apiKey, `/auth/v1/admin/users?per_page=1000`);
+            const users = Array.isArray(response.users)
+                ? response.users
+                : Array.isArray(response)
+                    ? response
+                    : [];
+            const newUsers = users.filter((user) => user.created_at && user.created_at >= since);
             return {
-                metric: args.metric ?? "conversion_rate",
-                range: args.range ?? "7d",
-                series: Array.from({ length: 7 }).map((_, idx) => ({
-                    day: idx,
-                    value: Number((7 + Math.random() * 2 - idx * 0.1).toFixed(2))
+                workspaceId: context.workspaceId,
+                range,
+                totalUsers: users.length,
+                newUsers: newUsers.length,
+                activationRate: Number(((newUsers.length / Math.max(users.length, 1)) * 100).toFixed(2)),
+                sampleUsers: newUsers.slice(0, 5).map((user) => ({
+                    id: user.id,
+                    email: user.email,
+                    createdAt: user.created_at
                 }))
             };
         }
         if (toolId === "supabase.sync_subscription") {
+            const retries = Number(args.retries ?? 1);
+            const functionName = config.syncFunction ?? "sync_subscription";
+            const response = await this.invokeFunction(config.url, config.apiKey, functionName, {
+                workspaceId: context.workspaceId,
+                actorId: context.actorId,
+                retries
+            });
             return {
-                status: "ok",
-                retries: args.retries ?? 1,
-                message: "Subscription sync retried with exponential backoff."
+                status: "queued",
+                functionName,
+                retries,
+                response
             };
         }
         throw new Error(`Unknown Supabase tool: ${toolId}`);
+    }
+    getConfig(context) {
+        const metadata = (context.connection?.connectionMetadata || {});
+        const url = metadata.supabaseUrl ?? process.env.SUPABASE_URL;
+        const apiKey = context.connection?.accessToken ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
+        const syncFunction = metadata.syncFunction ?? process.env.SUPABASE_SYNC_FUNCTION;
+        if (!url || !apiKey) {
+            throw new Error("Supabase URL or service role key missing. Connect Supabase first.");
+        }
+        return { url, apiKey, syncFunction };
+    }
+    getRangeDays(range) {
+        return range === "30d" ? 30 : 7;
+    }
+    async fetchSupabase(url, apiKey, path) {
+        const endpoint = `${url}${path.startsWith("/") ? path : `/${path}`}`;
+        const response = await fetch(endpoint, {
+            headers: {
+                apikey: apiKey,
+                Authorization: `Bearer ${apiKey}`,
+                "Content-Type": "application/json"
+            }
+        });
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Supabase API ${response.status}: ${errorText}`);
+        }
+        return (await response.json());
+    }
+    async invokeFunction(url, apiKey, name, payload) {
+        const endpoint = `${url}/functions/v1/${name}`;
+        const response = await fetch(endpoint, {
+            method: "POST",
+            headers: {
+                apikey: apiKey,
+                Authorization: `Bearer ${apiKey}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(payload)
+        });
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Supabase function ${name} failed: ${errorText}`);
+        }
+        return response.status === 204 ? { message: "Function invoked" } : await response.json();
     }
 }
 exports.SupabaseConnector = SupabaseConnector;

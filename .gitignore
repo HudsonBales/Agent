@@ -5,3 +5,4 @@ frontend/.next/
 frontend/.turbo/
 frontend/.eslintcache
 backend/.data/
+backend/.env

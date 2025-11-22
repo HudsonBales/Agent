@@ -1,0 +1,1 @@
+{"version":3,"file":"integration-router.d.ts","sourceRoot":"","sources":["../../src/api/integration-router.ts"],"names":[],"mappings":"AACA,OAAO,EAAE,SAAS,EAAE,MAAM,eAAe,CAAC;AAC1C,OAAO,EAAE,UAAU,EAAE,MAAM,6BAA6B,CAAC;AAGzD,UAAU,eAAe;IACvB,KAAK,EAAE,SAAS,CAAC;IACjB,OAAO,EAAE,UAAU,CAAC;CACrB;AAED,wBAAgB,uBAAuB,CAAC,IAAI,EAAE,eAAe,8CA6F5D"}

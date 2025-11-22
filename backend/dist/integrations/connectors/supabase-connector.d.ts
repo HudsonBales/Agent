@@ -4,6 +4,7 @@ export declare class SupabaseConnector implements IntegrationConnector {
     id: string;
     name: string;
     namespace: string;
+    requiresConnection: boolean;
     tools: ({
         id: string;
         name: string;
@@ -24,22 +25,35 @@ export declare class SupabaseConnector implements IntegrationConnector {
         };
     })[];
     execute(toolId: string, args: Record<string, unknown>, context: IntegrationContext): Promise<{
-        metric: {};
-        range: {};
-        series: {
-            day: number;
-            value: number;
+        workspaceId: string;
+        range: string;
+        totalUsers: number;
+        newUsers: number;
+        activationRate: number;
+        sampleUsers: {
+            id: string;
+            email: string | undefined;
+            createdAt: string | undefined;
         }[];
         status?: never;
+        functionName?: never;
         retries?: never;
-        message?: never;
+        response?: never;
     } | {
         status: string;
-        retries: {};
-        message: string;
-        metric?: never;
+        functionName: string;
+        retries: number;
+        response: any;
+        workspaceId?: never;
         range?: never;
-        series?: never;
+        totalUsers?: never;
+        newUsers?: never;
+        activationRate?: never;
+        sampleUsers?: never;
     }>;
+    private getConfig;
+    private getRangeDays;
+    private fetchSupabase;
+    private invokeFunction;
 }
 //# sourceMappingURL=supabase-connector.d.ts.map

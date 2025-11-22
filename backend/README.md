@@ -18,6 +18,7 @@ The service listens on `http://localhost:4000` by default. Configure the port wi
 - **Edge / API layer** – `src/api/router.ts` exposes `/api/v1/*` plus the SSE chat stream. It terminates connections and forwards every prompt/tool call downstream.
 - **Agent orchestration** – `src/agents/*` (planner, ops intelligence, UI designer, remediation) and `AgentOrchestrator` maintain conversation state, emit streaming events, and coordinate planning/insight/remediation across tools.
 - **Integration / MCP gateway** – `src/integrations/mcp-gateway.ts` plus `connectors/*` simulate MCP servers (Stripe, Supabase, Slack, Notion) to demonstrate tool discovery/invocation under per-workspace context.
+- **OpenAI Apps Bridge** – tool executions now emit `_meta.openai.outputTemplate` metadata (via `src/apps/apps-sdk.ts`) so ChatGPT renders the OpsPilot widget next to generative replies when MCP servers stream interactive blocks.
 - **Automation & workflow engine** – `src/workflows/engine.ts` executes graph definitions, tracks runs, and emits completion signals; it is the live execution mode visualized in the adaptive canvas.
 - **Signals & intelligence** – `src/signals/signals-service.ts` ingests synthetic telemetry, computes metrics, and detects anomalies, driving the proactive incident panels in the UI.
 - **Experience & UI schema layer** – `src/experience/ui-experience-service.ts` generates dashboard layouts + panels so the frontend can render the “self-building console” without manual composition.
@@ -52,3 +53,7 @@ All subsystems share a JSON-backed `DataStore` seeded by `src/data/seed.ts` and 
 - Plug real LLM calls (OpenAI, Anthropic, Gemini, Bedrock) into `AgentOrchestrator` to reason over plans/UI/workflows.
 - Expand the workflow engine with branching, retries, policy-based auto-remediation, and multi-worker execution.
 - Feed real telemetry via webhooks/streams into `SignalsService` for production-grade anomaly/insight detection.
+
+### Apps SDK configuration
+
+The Apps bridge uses `FRONTEND_BASE_URL` (or `APPS_WIDGET_BASE_URL` if set) to point ChatGPT at the widget bundle served from the frontend (`/apps/widgets/mcp-dashboard`). Update those environment variables when deploying to ensure the `_meta.openai.outputTemplate` metadata resolves to a publicly accessible URL.

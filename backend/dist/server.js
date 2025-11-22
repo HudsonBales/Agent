@@ -23,7 +23,7 @@ function buildServer() {
     const dataDir = node_path_1.default.join(process.cwd(), ".data");
     const persistPath = node_path_1.default.join(dataDir, "db.json");
     const store = new store_1.DataStore(seed_1.seedData, { persistPath });
-    const gateway = new mcp_gateway_1.MCPGateway();
+    const gateway = new mcp_gateway_1.MCPGateway(store);
     const signals = new signals_service_1.SignalsService(store, bus);
     const uiService = new ui_experience_service_1.UIExperienceService(store, bus);
     const workflows = new engine_1.WorkflowEngine(store, gateway, bus);
@@ -32,7 +32,7 @@ function buildServer() {
     const remediation = new remediation_agent_1.RemediationAgent(workflows);
     const uiDesigner = new ui_designer_agent_1.UIDesignerAgent(uiService);
     const orchestrator = new orchestrator_1.AgentOrchestrator(store, planner, ops, uiDesigner, remediation, gateway);
-    const app = (0, router_1.createApp)({ store, orchestrator, gateway, signals, workflows, ui: uiService });
+    const app = (0, router_1.createApp)({ store, orchestrator, gateway, signals, workflows, ui: uiService, bus });
     signals.start();
     workflows.start();
     bus.on("signals.anomaly.detected", (payload) => {

@@ -1,4 +1,5 @@
 import { Agent, Anomaly, Insight, Message, MetricSeries, Session, UISchema, WorkflowDefinition, WorkflowRun, Workspace } from "../types";
+import { IntegrationConnection } from "./models/integration.model";
 interface SeedData {
     workspaces: Workspace[];
     agents: Agent[];
@@ -22,6 +23,8 @@ export declare class DataStore {
     private anomalies;
     private uiSchemas;
     private insights;
+    private integrationConnections;
+    private integrationTokens;
     private persistPath;
     constructor(seed: SeedData, options?: DataStoreOptions);
     getWorkspace(workspaceId: string): Workspace | undefined;
@@ -50,6 +53,12 @@ export declare class DataStore {
     saveUISchema(schema: UISchema): UISchema;
     listInsights(workspaceId: string): Insight[];
     saveInsight(insight: Insight): Insight;
+    listIntegrationConnections(workspaceId: string): IntegrationConnection[];
+    getIntegrationConnection(workspaceId: string, integrationId: string): IntegrationConnection | undefined;
+    upsertIntegrationConnection(workspaceId: string, integrationId: string, payload: Partial<IntegrationConnection> & {
+        accessToken?: string;
+    }): IntegrationConnection;
+    disconnectIntegration(workspaceId: string, integrationId: string): IntegrationConnection | null;
     private persist;
 }
 export {};

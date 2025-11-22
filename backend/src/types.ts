@@ -1,3 +1,5 @@
+import type { IntegrationConnection } from "./data/models/integration.model";
+
 export type Role = "system" | "user" | "assistant" | "tool";
 
 export interface Workspace {
@@ -63,9 +65,33 @@ export interface ToolDescription {
   capabilities: string[];
 }
 
+export interface OpenAIAppsWidgetTemplate {
+  id: string;
+  version: string;
+  title: string;
+  description: string;
+  kind: "openai.apps.widget";
+  url: string;
+  height: number;
+  state: Record<string, unknown>;
+}
+
+export interface ToolExecutionMetadata {
+  openai?: {
+    outputTemplate: OpenAIAppsWidgetTemplate;
+  };
+}
+
+export interface ToolExecution {
+  toolId: string;
+  result: unknown;
+  metadata?: ToolExecutionMetadata;
+}
+
 export interface IntegrationContext {
   workspaceId: string;
   actorId: string;
+  connection?: IntegrationConnection;
 }
 
 export interface WorkflowStep {

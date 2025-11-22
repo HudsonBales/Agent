@@ -1,0 +1,24 @@
+
+> indie-copilot@0.1.0 dev
+> next dev
+
+  ▲ Next.js 14.2.4
+  - Local:        http://localhost:3000
+  - Environments: .env
+
+ ✓ Starting...
+ ⚠ Invalid next.config.mjs options detected: 
+ ⚠     Expected object, received boolean at "experimental.serverActions"
+ ⚠ See more info here: https://nextjs.org/docs/messages/invalid-next-config
+ ⚠ Server Actions are available by default now, `experimental.serverActions` option can be safely removed.
+ ✓ Ready in 1057ms
+ ○ Compiling / ...
+ ✓ Compiled / in 1139ms (549 modules)
+ HEAD / 307 in 1229ms
+ ✓ Compiled /apps/widgets/mcp-dashboard in 163ms (561 modules)
+ GET /apps/widgets/mcp-dashboard?mock=1 200 in 219ms
+ ✓ Compiled in 129ms (283 modules)
+ ✓ Compiled in 89ms (283 modules)
+ ✓ Compiled in 198ms (283 modules)
+ ✓ Compiled in 140ms (283 modules)
+ ✓ Compiled in 195ms (283 modules)

@@ -7,8 +7,10 @@ interface RemediationSuggestion {
 }
 export declare class RemediationAgent {
     private workflows;
-    constructor(workflows: WorkflowEngine);
-    suggest(workspaceId: string, anomalies: Anomaly[]): RemediationSuggestion[];
+    private llm?;
+    constructor(workflows: WorkflowEngine, apiKey?: string | undefined);
+    suggest(workspaceId: string, anomalies: Anomaly[]): Promise<RemediationSuggestion[]>;
+    private buildFallback;
 }
 export {};
 //# sourceMappingURL=remediation-agent.d.ts.map

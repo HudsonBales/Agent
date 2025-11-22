@@ -18,7 +18,7 @@ export function buildServer() {
   const dataDir = path.join(process.cwd(), ".data");
   const persistPath = path.join(dataDir, "db.json");
   const store = new DataStore(seedData, { persistPath });
-  const gateway = new MCPGateway();
+  const gateway = new MCPGateway(store);
   const signals = new SignalsService(store, bus);
   const uiService = new UIExperienceService(store, bus);
   const workflows = new WorkflowEngine(store, gateway, bus);

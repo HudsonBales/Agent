@@ -2,113 +2,158 @@
 
 import { Message } from "@/data/types";
 import { MessageBubble } from "./message-bubble";
-import { useSSE } from "@/lib/sse";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useChatStream } from "./chat-stream-context";
 
-export function MessageList({ messages, sessionId }: { messages: Message[]; sessionId: string }) {
-  const { events } = useSSE(sessionId);
+interface Props {
+  messages: Message[];
+}
+
+export function MessageList({ messages }: Props) {
+  const { events, connected } = useChatStream();
   const [streamedMessages, setStreamedMessages] = useState<Message[]>([]);
+  const processedRef = useRef(0);
 
-  // Process SSE events to update messages in real-time
   useEffect(() => {
-    if (events.length === 0) return;
+    if (events.length === 0 || processedRef.current === events.length) {
+      return;
+    }
+    const newEvents = events.slice(processedRef.current);
+    processedRef.current = events.length;
 
-    const latestEvent = events[events.length - 1];
-    
-    // Handle different event types
-    switch (latestEvent.type) {
-      case "plan":
-        // Add plan block to the last assistant message
-        setStreamedMessages(prev => {
-          const lastMsg = prev[prev.length - 1];
-          if (lastMsg && lastMsg.role === "assistant") {
-            const updatedMsg = {
-              ...lastMsg,
+    newEvents.forEach((event) => {
+      switch (event.type) {
+        case "plan":
+          setStreamedMessages((prev) => {
+            const next = [...prev];
+            const assistantMsg = next[next.length - 1];
+            if (assistantMsg && assistantMsg.role === "assistant") {
+              const updated = {
+                ...assistantMsg,
+                blocks: [
+                  ...(assistantMsg.blocks ?? []),
+                  {
+                    type: "plan",
+                    title: "Execution plan",
+                    data: event.data
+                  }
+                ]
+              } as Message;
+              next.splice(next.length - 1, 1, updated);
+              return next;
+            }
+            return [
+              ...prev,
+              {
+                id: `plan-${Date.now()}`,
+                role: "assistant",
+                content: "Here is the current plan.",
+                createdAt: new Date().toISOString(),
+                blocks: [
+                  {
+                    type: "plan",
+                    title: "Execution plan",
+                    data: event.data
+                  }
+                ]
+              }
+            ];
+          });
+          break;
+        case "insight":
+          setStreamedMessages((prev) => [
+            ...prev,
+            {
+              id: `insight-${Date.now()}`,
+              role: "assistant",
+              content: event.data.text ?? "New insight detected.",
+              createdAt: new Date().toISOString(),
               blocks: [
-                ...(lastMsg.blocks || []),
                 {
-                  type: "plan",
-                  title: "Execution Plan",
-                  data: latestEvent.data
+                  type: "metrics",
+                  metrics: [
+                    {
+                      label: event.data.category ?? "Insight",
+                      value: event.data.score ?? "Live"
+                    }
+                  ]
                 }
               ]
-            };
-            return [...prev.slice(0, -1), updatedMsg];
-          }
-          return prev;
-        });
-        break;
-        
-      case "insight":
-        // Add insight as a new message
-        const insightMessage: Message = {
-          id: `insight-${Date.now()}`,
-          role: "assistant",
-          content: latestEvent.data.text || "New insight detected",
-          createdAt: new Date().toISOString(),
-          blocks: [
-            {
-              type: "metrics",
-              metrics: [
-                { label: "Insight", value: latestEvent.data.category || "General" }
-              ]
             }
-          ]
-        };
-        setStreamedMessages(prev => [...prev, insightMessage]);
-        break;
-        
-      case "ui_schema":
-        // Update UI schema block in the last assistant message
-        setStreamedMessages(prev => {
-          const lastMsg = prev[prev.length - 1];
-          if (lastMsg && lastMsg.role === "assistant") {
-            const updatedMsg = {
-              ...lastMsg,
-              blocks: (lastMsg.blocks || []).map(block =>
-                block.type === "ui_schema"
-                  ? { ...block, data: latestEvent.data }
-                  : block
-              )
-            };
-            return [...prev.slice(0, -1), updatedMsg];
-          }
-          return prev;
-        });
-        break;
-        
-      case "tool_call":
-        // Handle tool call events
-        console.log("Tool call event:", latestEvent.data);
-        break;
-        
-      case "final":
-        // Final message update
-        setStreamedMessages(prev => {
-          const lastMsg = prev[prev.length - 1];
-          if (lastMsg && lastMsg.role === "assistant") {
-            const updatedMsg = {
-              ...lastMsg,
-              content: latestEvent.data.message || lastMsg.content
-            };
-            return [...prev.slice(0, -1), updatedMsg];
-          }
-          return prev;
-        });
-        break;
-    }
+          ]);
+          break;
+        case "ui_schema":
+          setStreamedMessages((prev) => {
+            const next = [...prev];
+            const existing = next[next.length - 1];
+            if (existing && existing.role === "assistant") {
+              const updated = {
+                ...existing,
+                blocks: [
+                  ...(existing.blocks ?? []).filter((block) => block.type !== "ui_schema"),
+                  {
+                    type: "ui_schema",
+                    title: "Adaptive layout",
+                    data: event.data
+                  }
+                ]
+              } as Message;
+              next.splice(next.length - 1, 1, updated);
+              return next;
+            }
+            return [
+              ...prev,
+              {
+                id: `schema-${Date.now()}`,
+                role: "assistant",
+                content: "Updating the canvas with a new layout.",
+                createdAt: new Date().toISOString(),
+                blocks: [
+                  {
+                    type: "ui_schema",
+                    title: "Adaptive layout",
+                    data: event.data
+                  }
+                ]
+              }
+            ];
+          });
+          break;
+        case "final":
+          setStreamedMessages((prev) => {
+            const next = [...prev];
+            const existing = next[next.length - 1];
+            if (existing && existing.role === "assistant") {
+              next.splice(next.length - 1, 1, {
+                ...existing,
+                content: event.data.message ?? existing.content
+              });
+              return next;
+            }
+            return prev;
+          });
+          break;
+        default:
+          break;
+      }
+    });
   }, [events]);
 
-  // Combine original messages with streamed messages
-  const allMessages = [...messages, ...streamedMessages].filter((message) => {
-    return Boolean(message.content && message.content.trim().length > 0);
-  });
+  const mergedMessages = useMemo(() => {
+    return [...messages, ...streamedMessages].filter((message) => message.content?.trim().length);
+  }, [messages, streamedMessages]);
 
   return (
-    <div className="space-y-8">
-      {allMessages.map((message) => (
-        <MessageBubble key={message.id} message={message} />
-      ))}
+    <div className="flex h-full flex-col gap-6">
+      <div className="flex items-center gap-2 text-xs uppercase tracking-[0.4em] text-white/50">
+        <span className={`h-2 w-2 rounded-full ${connected ? "bg-emerald-400" : "bg-yellow-400"}`} />
+        {connected ? "Live" : "Reconnecting"}
+      </div>
+      <div className="flex-1 space-y-6 overflow-y-auto pr-2">
+        {mergedMessages.map((message) => (
+          <MessageBubble key={message.id} message={message} />
+        ))}
+      </div>
     </div>
   );
 }

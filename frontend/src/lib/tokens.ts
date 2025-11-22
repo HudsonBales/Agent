@@ -1,51 +1,56 @@
 export const tokens = {
   colors: {
     brand: {
-      DEFAULT: "#6F7DFF",
-      foreground: "#0C0F1A"
+      DEFAULT: '#1A73E8', // Google Blue
+      foreground: '#FFFFFF',
     },
     neutral: {
-      50: "#F8FAFC",
-      100: "#EEF2FF",
-      200: "#E2E8F0",
-      300: "#CBD5F5",
-      400: "#A5B4FC",
-      500: "#818CF8",
-      600: "#6366F1",
-      700: "#4C51BF",
-      800: "#2A2D4B",
-      900: "#181A2A",
-      950: "#0B0D18"
-    }
+      50: '#F8F9FA',
+      100: '#F1F3F4',
+      200: '#E8EAED',
+      300: '#DADCE0',
+      400: '#BDC1C6',
+      500: '#9AA0A6',
+      600: '#80868B',
+      700: '#5F6368',
+      800: '#3C4043',
+      900: '#202124',
+      950: '#000000',
+    },
+    accent: {
+      green: '#34A853',
+      yellow: '#FBBC04',
+      red: '#EA4335',
+    },
   },
   fonts: {
-    sans: ["'Inter', sans-serif"],
-    mono: ["'JetBrains Mono', monospace"]
+    sans: ["'Roboto', sans-serif"],
+    mono: ["'JetBrains Mono', monospace"],
   },
   fontSizes: {
-    xs: "0.75rem",
-    sm: "0.875rem",
-    base: "1rem",
-    lg: "1.125rem",
-    xl: "1.25rem",
-    "2xl": "1.5rem"
+    xs: '0.75rem',
+    sm: '0.875rem',
+    base: '1rem',
+    lg: '1.125rem',
+    xl: '1.25rem',
+    '2xl': '1.5rem',
   },
   radii: {
-    sm: "0.25rem",
-    DEFAULT: "0.5rem",
-    lg: "0.75rem",
-    full: "999px"
+    sm: '4px',
+    DEFAULT: '8px',
+    lg: '16px',
+    full: '9999px',
   },
   shadows: {
-    card: "0 10px 40px rgba(15,23,42,0.3)"
+    card: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
   },
   spacing: {
-    1: "0.25rem",
-    2: "0.5rem",
-    3: "0.75rem",
-    4: "1rem",
-    6: "1.5rem",
-    8: "2rem",
-    10: "2.5rem"
-  }
+    1: '0.25rem',
+    2: '0.5rem',
+    3: '0.75rem',
+    4: '1rem',
+    6: '1.5rem',
+    8: '2rem',
+    10: '2.5rem',
+  },
 };

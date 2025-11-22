@@ -1,3 +1,4 @@
+import type { IntegrationConnection } from "./data/models/integration.model";
 export type Role = "system" | "user" | "assistant" | "tool";
 export interface Workspace {
     id: string;
@@ -58,6 +59,7 @@ export interface ToolDescription {
 export interface IntegrationContext {
     workspaceId: string;
     actorId: string;
+    connection?: IntegrationConnection;
 }
 export interface WorkflowStep {
     id: string;

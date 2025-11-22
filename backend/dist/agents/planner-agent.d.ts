@@ -10,6 +10,9 @@ export interface PlanResult {
     steps: PlanStep[];
 }
 export declare class PlannerAgent {
-    createPlan(session: Session, agent: Agent, latestUserMessage: string): PlanResult;
+    private llm?;
+    constructor(apiKey?: string | undefined);
+    createPlan(session: Session, agent: Agent, latestUserMessage: string): Promise<PlanResult>;
+    private buildFallbackPlan;
 }
 //# sourceMappingURL=planner-agent.d.ts.map

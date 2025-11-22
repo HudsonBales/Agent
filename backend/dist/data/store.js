@@ -10,6 +10,8 @@ const nanoid_1 = require("nanoid");
 class DataStore {
     constructor(seed, options) {
         this.workflowRuns = [];
+        this.integrationConnections = [];
+        this.integrationTokens = [];
         this.persistPath = options?.persistPath;
         if (this.persistPath && node_fs_1.default.existsSync(this.persistPath)) {
             const persisted = JSON.parse(node_fs_1.default.readFileSync(this.persistPath, "utf-8"));
@@ -22,6 +24,8 @@ class DataStore {
             this.uiSchemas = persisted.uiSchemas ?? seed.uiSchemas;
             this.insights = persisted.insights ?? seed.insights;
             this.workflowRuns = persisted.workflowRuns ?? [];
+            this.integrationConnections = persisted.integrationConnections ?? [];
+            this.integrationTokens = persisted.integrationTokens ?? [];
         }
         else {
             this.workspaces = seed.workspaces;
@@ -33,6 +37,8 @@ class DataStore {
             this.uiSchemas = seed.uiSchemas;
             this.insights = seed.insights;
             this.workflowRuns = [];
+            this.integrationConnections = [];
+            this.integrationTokens = [];
             this.persist();
         }
     }
@@ -193,6 +199,69 @@ class DataStore {
         this.persist();
         return insight;
     }
+    listIntegrationConnections(workspaceId) {
+        return this.integrationConnections.filter((connection) => connection.workspaceId === workspaceId);
+    }
+    getIntegrationConnection(workspaceId, integrationId) {
+        return this.integrationConnections.find((connection) => connection.workspaceId === workspaceId && connection.integrationId === integrationId);
+    }
+    upsertIntegrationConnection(workspaceId, integrationId, payload) {
+        const now = new Date().toISOString();
+        const existing = this.getIntegrationConnection(workspaceId, integrationId);
+        let connection;
+        if (existing) {
+            connection = {
+                ...existing,
+                accessToken: payload.accessToken ?? existing.accessToken,
+                connected: payload.connected ?? true,
+                updatedAt: now
+            };
+            if (payload.refreshToken !== undefined) {
+                connection.refreshToken = payload.refreshToken;
+            }
+            if (payload.expiresAt !== undefined) {
+                connection.expiresAt = payload.expiresAt;
+            }
+            if (payload.connectionMetadata !== undefined) {
+                connection.connectionMetadata = payload.connectionMetadata;
+            }
+            const idx = this.integrationConnections.findIndex((item) => item.id === connection.id);
+            if (idx >= 0) {
+                this.integrationConnections[idx] = connection;
+            }
+        }
+        else {
+            connection = {
+                id: `conn-${(0, nanoid_1.nanoid)(8)}`,
+                workspaceId,
+                integrationId,
+                accessToken: payload.accessToken ?? "",
+                connected: payload.connected ?? true,
+                connectionMetadata: payload.connectionMetadata ?? {},
+                createdAt: now,
+                updatedAt: now
+            };
+            if (payload.refreshToken !== undefined) {
+                connection.refreshToken = payload.refreshToken;
+            }
+            if (payload.expiresAt !== undefined) {
+                connection.expiresAt = payload.expiresAt;
+            }
+            this.integrationConnections.push(connection);
+        }
+        this.persist();
+        return connection;
+    }
+    disconnectIntegration(workspaceId, integrationId) {
+        const connection = this.getIntegrationConnection(workspaceId, integrationId);
+        if (!connection) {
+            return null;
+        }
+        connection.connected = false;
+        connection.updatedAt = new Date().toISOString();
+        this.persist();
+        return connection;
+    }
     persist() {
         if (!this.persistPath) {
             return;
@@ -206,7 +275,9 @@ class DataStore {
             anomalies: this.anomalies,
             uiSchemas: this.uiSchemas,
             insights: this.insights,
-            workflowRuns: this.workflowRuns
+            workflowRuns: this.workflowRuns,
+            integrationConnections: this.integrationConnections,
+            integrationTokens: this.integrationTokens
         };
         const dir = node_path_1.default.dirname(this.persistPath);
         if (!node_fs_1.default.existsSync(dir)) {
